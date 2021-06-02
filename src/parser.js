@@ -267,3 +267,73 @@ ${" ".repeat(strSoFar.length + 1)}^^^^^^`);
     console.log(snippet);
   }
 }
+
+function printFailCase(json) {
+  try {
+    console.log(`fakeParseJSON('${json}')`);
+    fakeParseJSON(json);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function printSuccessCase(json) {
+  try {
+    const result = fakeParseJSON(json)
+    console.log(result)
+  } catch(error) {
+    console.error(error)
+  }
+}
+
+const packageJsonSample = `{
+  "name": "next-jamstack-portfolio",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "run-s build:posts build:next",
+    "build:posts": "ts-node --project tsconfig.builder.json ./src/builder/posts.ts",
+    "build:next": "next build",
+    "start": "next start",
+    "test": "jest",
+    "test:coverage": "jest --collect-coverage",
+    "api:build": "aspida",
+    "bundle:analyze": "ANALYZE=true yarn build"
+  },
+  "dependencies": {
+    "@aspida/fetch": "^1.7.0",
+    "@aspida/node-fetch": "^1.7.0",
+    "@types/enzyme-adapter-react-16": "^1.0.6",
+    "@types/jest": "^26.0.22",
+    "@types/react-test-renderer": "^17.0.1",
+    "babel-plugin-prismjs": "^2.0.1",
+    "enzyme": "^3.11.0",
+    "enzyme-adapter-react-16": "^1.15.6",
+    "enzyme-to-json": "^3.6.2",
+    "jest": "^26.6.3",
+    "marked": "^2.0.3",
+    "next": "^10.2.0",
+    "node-fetch": "^2.6.1",
+    "prismjs": "^1.23.0",
+    "react": "17.0.1",
+    "react-dom": "17.0.1",
+    "react-test-renderer": "^17.0.2",
+    "react-twemoji": "^0.3.0",
+    "sass": "^1.32.8",
+    "ts-jest": "^26.5.5"
+  },
+  "devDependencies": {
+    "@next/bundle-analyzer": "^10.2.2",
+    "@types/node": "^14.14.31",
+    "@types/node-fetch": "^2.5.10",
+    "@types/react": "^17.0.2",
+    "babel-plugin-inline-react-svg": "^2.0.1",
+    "npm-run-all": "^4.1.5",
+    "rss-parser": "^3.12.0",
+    "styled-components": "^5.2.1",
+    "ts-node": "^10.0.0",
+    "typescript": "^4.2.2"
+  }
+}`
+printSuccessCase(packageJsonSample)
