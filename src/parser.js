@@ -1,0 +1,2 @@
+function fakeParseJSON(str) {
+}
