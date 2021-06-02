@@ -1,72 +1,76 @@
 function fakeParseJSON(str) {
   let i = 0;
 
-  return parseValue()
+  const value = parseValue();
+  expectEndOfInput();
+  return value;
 
   function parseObject() {
-    if (str(i) === '{') {
-      i++
-      skipWhiteSpace()
-      const result = {}
-      let initial = true
+    if (str[i] === "{") {
+      i++;
+      skipWhitespace();
 
-      while (i < str.length && str[i] === '}') {
+      const result = {};
+
+      let initial = true;
+      // if it is not '}',
+      // we take the path of string -> whitespace -> ':' -> value -> ...
+      while (i < str.length && str[i] !== "}") {
         if (!initial) {
           eatComma();
-          skipWhiteSpace();
+          skipWhitespace();
         }
-        const key = parseString()
-        skipWhiteSpace();
+        const key = parseString();
+        if (key === undefined) {
+          expectObjectKey();
+        }
+        skipWhitespace();
         eatColon();
         const value = parseValue();
-        result[key] = value
-        initial = false
+        result[key] = value;
+        initial = false;
       }
-      checkUnexpectedEndOfInput();
-      i++
-      return result
+      expectNotEndOfInput("}");
+      // move to the next character of '}'
+      i++;
+
+      return result;
     }
   }
 
   function parseArray() {
-    if (str[i] === '[') {
-      i++
-      skipWhiteSpace();
+    if (str[i] === "[") {
+      i++;
+      skipWhitespace();
 
-      const result = []
-      let initial = true
-      while (str[i] !== ']') {
+      const result = [];
+      let initial = true;
+      while (i < str.length && str[i] !== "]") {
         if (!initial) {
-          eatComma()
+          eatComma();
         }
-        const value = parseValue()
-        result.push(value)
-        initial = false
+        const value = parseValue();
+        result.push(value);
+        initial = false;
       }
-      i++
-      return result
-    }
-  }
-
-
-  function parseKeyword(name, value) {
-    if (str.slice(i, i + name.length) === name) {
-      i += name.length;
-      return value;
+      expectNotEndOfInput("]");
+      // move to the next character of ']'
+      i++;
+      return result;
     }
   }
 
   function parseValue() {
-    skipWhiteSpace()
-    const value = 
+    skipWhitespace();
+    const value =
       parseString() ??
       parseNumber() ??
       parseObject() ??
       parseArray() ??
-      parseKeyword('true', true) ?? 
-      parseKeyword('false', false) ?? 
-      parseKeyword('null', null);
-    skipWhiteSpace()
+      parseKeyword("true", true) ??
+      parseKeyword("false", false) ??
+      parseKeyword("null", null);
+    skipWhitespace();
     return value;
   }
 
@@ -77,7 +81,7 @@ function fakeParseJSON(str) {
     }
   }
 
-  function skipWhiteSpace() {
+  function skipWhitespace() {
     while (
       str[i] === " " ||
       str[i] === "\n" ||
@@ -92,7 +96,7 @@ function fakeParseJSON(str) {
     if (str[i] === '"') {
       i++;
       let result = "";
-      while (str[i] !== '"') {
+      while (i < str.length && str[i] !== '"') {
         if (str[i] === "\\") {
           const char = str[i + 1];
           if (
@@ -118,13 +122,19 @@ function fakeParseJSON(str) {
                 parseInt(str.slice(i + 2, i + 6), 16)
               );
               i += 5;
+            } else {
+              i += 2;
+              expectEscapeUnicode(result);
             }
+          } else {
+            expectEscapeCharacter(result);
           }
         } else {
           result += str[i];
         }
         i++;
       }
+      expectNotEndOfInput('"');
       i++;
       return result;
     }
@@ -141,6 +151,7 @@ function fakeParseJSON(str) {
     let start = i;
     if (str[i] === "-") {
       i++;
+      expectDigit(str.slice(start, i));
     }
     if (str[i] === "0") {
       i++;
@@ -153,6 +164,7 @@ function fakeParseJSON(str) {
 
     if (str[i] === ".") {
       i++;
+      expectDigit(str.slice(start, i));
       while (str[i] >= "0" && str[i] <= "9") {
         i++;
       }
@@ -162,6 +174,7 @@ function fakeParseJSON(str) {
       if (str[i] === "-" || str[i] === "+") {
         i++;
       }
+      expectDigit(str.slice(start, i));
       while (str[i] >= "0" && str[i] <= "9") {
         i++;
       }
@@ -172,28 +185,85 @@ function fakeParseJSON(str) {
   }
 
   function eatComma() {
-    if (str[i] !== ",") {
-      throw new Error('Expected ",".')
-    }
-    i++
+    expectCharacter(",");
+    i++;
   }
 
   function eatColon() {
-    if (str[i] !== ':') {
-      throw new Error('Expected ":".')
-    }
-    i++
+    expectCharacter(":");
+    i++;
   }
 
-  function printCodeSnippet() {
+  // error handling
+  function expectNotEndOfInput(expected) {
+    if (i === str.length) {
+      printCodeSnippet(`Expecting a \`${expected}\` here`);
+      throw new Error("JSON_ERROR_0001 Unexpected End of Input");
+    }
+  }
+
+  function expectEndOfInput() {
+    if (i < str.length) {
+      printCodeSnippet("Expecting to end here");
+      throw new Error("JSON_ERROR_0002 Expected End of Input");
+    }
+  }
+
+  function expectObjectKey() {
+    printCodeSnippet(`Expecting object key here
+
+For example:
+{ "foo": "bar" }
+  ^^^^^`);
+    throw new Error("JSON_ERROR_0003 Expecting JSON Key");
+  }
+
+  function expectCharacter(expected) {
+    if (str[i] !== expected) {
+      printCodeSnippet(`Expecting a \`${expected}\` here`);
+      throw new Error("JSON_ERROR_0004 Unexpected token");
+    }
+  }
+
+  function expectDigit(numSoFar) {
+    if (!(str[i] >= "0" && str[i] <= "9")) {
+      printCodeSnippet(`JSON_ERROR_0005 Expecting a digit here
+
+For example:
+${numSoFar}5
+${" ".repeat(numSoFar.length)}^`);
+      throw new Error("JSON_ERROR_0006 Expecting a digit");
+    }
+  }
+
+  function expectEscapeCharacter(strSoFar) {
+    printCodeSnippet(`JSON_ERROR_0007 Expecting escape character
+
+For example:
+"${strSoFar}\\n"
+${" ".repeat(strSoFar.length + 1)}^^
+List of escape characters are: \\", \\\\, \\/, \\b, \\f, \\n, \\r, \\t, \\u`);
+    throw new Error("JSON_ERROR_0008 Expecting an escape character");
+  }
+
+  function expectEscapeUnicode(strSoFar) {
+    printCodeSnippet(`Expect escape unicode
+
+For example:
+"${strSoFar}\\u0123
+${" ".repeat(strSoFar.length + 1)}^^^^^^`);
+    throw new Error("JSON_ERROR_0009 Expecting an escape unicode");
+  }
+
+  function printCodeSnippet(message) {
     const from = Math.max(0, i - 10);
     const trimmed = from > 0;
-    const padding = (trimmed ? 3 : 0) + (i - from);
+    const padding = (trimmed ? 4 : 0) + (i - from);
     const snippet = [
-      (trimmed ? '...' : '') + str.slice(from, i + 1),
-      ' '.repeat(padding) + '^',
-      ' '.repeat(padding) + message,
-    ].join('\n');
+      (trimmed ? "... " : "") + str.slice(from, i + 1),
+      " ".repeat(padding) + "^",
+      " ".repeat(padding) + message
+    ].join("\n");
     console.log(snippet);
   }
 }
