@@ -13,7 +13,7 @@ function fakeParseJSON(str) {
     skipWhiteSpace()
     return value;
   }
-  
+
   function parseArray() {
     if (str[i] === '[') {
       i++
@@ -55,6 +55,13 @@ function fakeParseJSON(str) {
       }
       i++
       return result
+    }
+  }
+
+  function parseKeyword(name, value) {
+    if (str.slice(i, i + name.length) === name) {
+      i += name.length;
+      return value;
     }
   }
 
