@@ -1,5 +1,19 @@
 function fakeParseJSON(str) {
   let i = 0;
+  function parseValue() {
+    skipWhiteSpace()
+    const value = 
+      parseString() ??
+      parseNumber() ??
+      parseObject() ??
+      parseArray() ??
+      parseKeyword('true', true) ?? 
+      parseKeyword('false', false) ?? 
+      parseKeyword('null', null);
+    skipWhiteSpace()
+    return value;
+  }
+  
   function parseArray() {
     if (str[i] === '[') {
       i++
