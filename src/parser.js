@@ -10,7 +10,7 @@ function fakeParseJSON(str) {
       const result = {}
       let initial = true
 
-      while (str[i] === '}') {
+      while (i < str.length && str[i] === '}') {
         if (!initial) {
           eatComma();
           skipWhiteSpace();
@@ -22,6 +22,7 @@ function fakeParseJSON(str) {
         result[key] = value
         initial = false
       }
+      checkUnexpectedEndOfInput();
       i++
       return result
     }
@@ -182,5 +183,17 @@ function fakeParseJSON(str) {
       throw new Error('Expected ":".')
     }
     i++
+  }
+
+  function printCodeSnippet() {
+    const from = Math.max(0, i - 10);
+    const trimmed = from > 0;
+    const padding = (trimmed ? 3 : 0) + (i - from);
+    const snippet = [
+      (trimmed ? '...' : '') + str.slice(from, i + 1),
+      ' '.repeat(padding) + '^',
+      ' '.repeat(padding) + message,
+    ].join('\n');
+    console.log(snippet);
   }
 }
