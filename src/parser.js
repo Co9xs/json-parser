@@ -34,4 +34,11 @@ function fakeParseJSON(str) {
     }
     i++
   }
+
+  function skipWhiteSpace() {
+    if (str[i] !== ' ') {
+      throw new Error('Expected "whitespace".')
+    }
+    i++
+  }
 }
